@@ -3,7 +3,7 @@
  *
  * 两套数据：
  *   1. skill 库：扫描 ~/.dsh/skills 等根，以及 _sources.json 里的第三方源
- *   2. 技能包：读写 D:\workspace\DSH-skills-packs\*.md
+ *   2. 技能包：读写 packsDir（默认 ~/.dsh/skill-packs）下的 *.md
  *
  * 接口（前缀 /dsh-skill-panel）：
  *   GET  /list            列 skill（全部源）+ 列包
@@ -17,7 +17,7 @@
 import { readFile, writeFile, readdir, mkdir, stat, rm } from 'node:fs/promises'
 import { join, resolve, sep, dirname, basename } from 'node:path'
 import { homedir } from 'node:os'
-import { existsSync } from 'node:fs'
+import { existsSync, mkdirSync } from 'node:fs'
 
 export const name = 'skill-panel'
 export const inject = ['webServer']
@@ -31,8 +31,13 @@ function globalRoots() {
   return [join(home, '.dsh', 'skills'), join(home, '.dsh', 'skills-manual')]
 }
 
-/** 技能包目录：可被 Config 覆盖，默认在 workspace 下 */
-let PACKS_DIR = 'D:\\workspace\\DSH-skills-packs'
+/**
+ * 技能包目录。优先级：
+ *   1. 环境变量 DSH_SKILL_PACKS_DIR
+ *   2. 默认 ~/.dsh/skill-packs
+ * 不写死任何机器路径——别人 clone 下来即可用。
+ */
+let PACKS_DIR = process.env.DSH_SKILL_PACKS_DIR || join(homedir(), '.dsh', 'skill-packs')
 
 const SKILL_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
@@ -205,7 +210,15 @@ function send(res, code, value) {
 }
 
 export function apply(ctx, config = {}) {
+  // 配置来源：cordis.patch.yml 的 config.packsDir，或环境变量，或默认
   if (typeof config.packsDir === 'string' && config.packsDir !== '') PACKS_DIR = config.packsDir
+
+  // 首次运行自动建目录，避免面板显示"读取失败"
+  try {
+    mkdirSync(PACKS_DIR, { recursive: true })
+  } catch {
+    /* 建不了就在接口里报错，不阻断插件加载 */
+  }
 
   ctx.effect(() => {
     const handler = async (req, res) => {

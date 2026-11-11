@@ -15,7 +15,7 @@ DSH 的 skill 有两条路：
 派子代理时只需一行：
 
 ```
-技能包：D:\workspace\DSH-skills-packs\学术写作.md
+技能包：<你的技能包目录>\学术写作.md
 先 read 它，按里面的指示加载需要的 skill。
 ```
 
@@ -77,15 +77,19 @@ dsh plugin --profile <profile> add D:\path\to\dsh-skill-panel
 
 ## 目录约定
 
-插件默认读写：
+技能包目录（`packsDir`，默认 `~/.dsh/skill-packs`）：
 
 ```
-D:\workspace\DSH-skills-packs\
+<packsDir>\
 ├── _sources.json      源目录注册表
 ├── _FORMAT.md         包格式规范
+├── _TEMPLATE.md       空白模板
 ├── README.md
 └── *.md               各个技能包
 ```
+
+**改目录**：环境变量 `DSH_SKILL_PACKS_DIR`，或 `cordis.patch.yml` 里的
+`config.packsDir`。首次运行会自动创建目录。
 
 `_` 开头的文件不当作技能包。
 
